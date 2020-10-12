@@ -2,6 +2,7 @@ import unittest
 import markovify
 import sys, os
 import operator
+from pytest import raises
 
 def get_sorted(chain_json):
     return sorted(chain_json, key=operator.itemgetter(0))
@@ -23,6 +24,7 @@ class MarkovifyTestBase(unittest.TestCase):
         text_model = self.sherlock_model
         json_model = text_model.to_json()
         new_text_model = markovify.Text.from_json(json_model)
+        print(new_text_model)
         sent = new_text_model.make_sentence()
         assert(len(sent) != 0)
 
@@ -159,6 +161,20 @@ class MarkovifyTestBase(unittest.TestCase):
             model = markovify.NewlineText('This sentence (would normall fail')
 
         model = markovify.NewlineText('This sentence (would normall fail', well_formed = False)
+
+    def test_finish_by(self):
+        text_model = self.sherlock_model
+        end_str = "Holmes"
+        sent = text_model.make_sentence_that_finish(end_str)
+        assert(sent != None)
+        assert(end_str == sent[-len(end_str):])
+    
+    def test_contains(self):
+        text_model = self.sherlock_model
+        contain_str = "she"
+        sent = text_model.make_sentence_that_contains(contain_str)
+        assert(sent != None)
+        assert(contain_str in sent)
 
 class MarkovifyTest(MarkovifyTestBase):
     __test__ = True

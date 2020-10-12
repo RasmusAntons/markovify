@@ -30,11 +30,14 @@ class MarkovifyTest(unittest.TestCase):
 
     def test_combine_dicts(self):
         _dict = sherlock_model.chain.model
-        combo = markovify.combine([ _dict, _dict ])
+        _dict_r = sherlock_model.chain.model_reversed
+        
+        combo = markovify.combine([[ _dict, _dict_r], [ _dict, _dict_r ]])
 
     def test_combine_lists(self):
         _list = list(sherlock_model.chain.model.items())
-        combo = markovify.combine([ _list, _list ])
+        _list_r = list(sherlock_model.chain.model_reversed.items())
+        combo = markovify.combine(([ _list, _list_r ], [ _list, _list_r ]))
 
     def test_bad_types(self):
         with self.assertRaises(Exception) as context:
