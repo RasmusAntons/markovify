@@ -426,6 +426,12 @@ class Text(object):
             contains)
         raise ParamError(err_msg)
 
+    def least_common_word(self, sentence):
+        return self.chain.least_common_word(self.word_split(sentence))
+
+    def most_common_word(self, sentence):
+        return self.chain.most_common_word(self.word_split(sentence))
+
     @classmethod
     def from_chain(cls, chain_json, corpus=None, parsed_sentences=None):
         """

@@ -5,6 +5,7 @@ import json
 import copy
 import ast
 import copy
+from collections import Counter
 
 # Python3 compatibility
 try:  # pragma: no cover
@@ -41,7 +42,7 @@ class Chain(object):
     For example: Sentences.
     """
 
-    def __init__(self, corpus, state_size, model=None, model_reversed=None):
+    def __init__(self, corpus, state_size, model=None, model_reversed=None, word_counter=None):
         """
         `corpus`: A list of lists, where each outer list is a "run"
         of the process (e.g., a single sentence), and each inner list
@@ -56,6 +57,10 @@ class Chain(object):
 
         corpus_clone = copy.deepcopy(corpus)
 
+        self.word_counter = word_counter or Counter()
+        if corpus:
+            for sentence in copy.deepcopy(corpus):
+                self.word_counter.update(sentence)
         self.model = model or self.build(corpus, self.state_size)
         self.model_reversed = model_reversed or self.build_reverse(
             corpus_clone, self.state_size)
@@ -73,7 +78,7 @@ class Chain(object):
             return Chain(None, self.state_size,
                          model=copy.deepcopy(self.model),
                          model_reversed=copy.deepcopy(self.model_reversed))
-    
+
         mdict = {state: compile_next(next_dict)
                  for (state, next_dict) in self.model.items()}
 
@@ -82,7 +87,7 @@ class Chain(object):
 
         if not inplace:
             return Chain(None,self.state_size,
-                         model=mdict, 
+                         model=mdict,
                          model_reversed=mdict_reversed)
         self.model = mdict
         self.model_reversed = mdict_reversed
@@ -229,11 +234,24 @@ class Chain(object):
         """
         return list(self.gen(init_state))
 
+    def word_frequency(self, word):
+        return self.word_counter.get(word)
+
+    def least_common_word(self, parsed_sentence):
+        words = [(self.word_frequency(word), word) for word in set(parsed_sentence) if self.word_frequency(word)]
+        return min(words)[1] if words else None
+
+    def most_common_word(self, parsed_sentence):
+        words = [(self.word_frequency(word), word) for word in set(parsed_sentence) if self.word_frequency(word)]
+        return max(words)[1] if words else None
+
     def to_json(self):
         """
         Dump the model as a JSON object, for loading later.
         """
-        return json.dumps(list(self.model.items())), json.dumps(list(self.model_reversed.items()))
+        return (json.dumps(list(self.model.items())),
+                json.dumps(list(self.model_reversed.items())),
+                json.dumps(self.word_counter))
 
     @classmethod
     def from_json(cls, json_thing):
@@ -263,8 +281,12 @@ class Chain(object):
             rehydrated_reversed = obj2
         else:
             raise ValueError("Object should be tuple")
+        if len(obj) >= 3:
+            word_counter = Counter(ast.literal_eval(obj[2]))
+        else:
+            word_counter = None
 
         state_size = len(list(rehydrated.keys())[0])
 
-        inst = cls(None, state_size, rehydrated, rehydrated_reversed)
+        inst = cls(None, state_size, rehydrated, rehydrated_reversed, word_counter)
         return inst

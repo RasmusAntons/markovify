@@ -104,7 +104,7 @@ class MarkovifyTestBase(unittest.TestCase):
             assert(False)
         except markovify.text.ParamError:
             assert(True)
-	
+
         with self.assertRaises(Exception) as context:
             text_model.make_sentence_with_start(start_str)
         text_model = self.sherlock_model_ss3
